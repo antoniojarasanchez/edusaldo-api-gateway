@@ -12,15 +12,15 @@ Para clonar la solución completa con el Gateway, los 6 microservicios y el Fron
 mkdir EduSaldo && cd EduSaldo
 
 # 1. API Gateway Central
-git clone https://github.com/Antojara/edusaldo-api-gateway.git
+git clone https://github.com/antoniojarasanchez/edusaldo-api-gateway.git
 
 # 2. Los 6 Microservicios Backend
-git clone https://github.com/Antojara/edusaldo-ms-auth-usuarios.git
-git clone https://github.com/Antojara/edusaldo-ms-alumnos-saldos.git
-git clone https://github.com/Antojara/edusaldo-ms-productos-inventario.git
-git clone https://github.com/Antojara/edusaldo-ms-ventas-reservas.git
-git clone https://github.com/Antojara/edusaldo-ms-compras.git
-git clone https://github.com/Antojara/edusaldo-ms-finanzas-configuracion.git
+git clone https://github.com/antoniojarasanchez/edusaldo-ms-auth-usuarios.git
+git clone https://github.com/antoniojarasanchez/edusaldo-ms-alumnos-saldos.git
+git clone https://github.com/antoniojarasanchez/edusaldo-ms-productos-inventario.git
+git clone https://github.com/antoniojarasanchez/edusaldo-ms-ventas-reservas.git
+git clone https://github.com/antoniojarasanchez/edusaldo-ms-compras.git
+git clone https://github.com/antoniojarasanchez/edusaldo-ms-finanzas-configuracion.git
 
 # 3. Frontend SPA (Repositorio Oficial)
 git clone https://github.com/Flosotoo/paginaWeb.git

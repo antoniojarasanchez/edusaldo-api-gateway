@@ -1,0 +1,943 @@
+{
+  "info": {
+    "name": "EduSaldo 2.0 - Microservicios & API Gateway",
+    "description": "Colección oficial para evaluación de los 6 microservicios y API Gateway de EduSaldo.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "gateway",
+      "value": "http://localhost:8099",
+      "type": "string"
+    },
+    {
+      "key": "ms_auth",
+      "value": "http://localhost:8081",
+      "type": "string"
+    },
+    {
+      "key": "ms_alumnos",
+      "value": "http://localhost:8082",
+      "type": "string"
+    },
+    {
+      "key": "ms_productos",
+      "value": "http://localhost:8083",
+      "type": "string"
+    },
+    {
+      "key": "ms_ventas",
+      "value": "http://localhost:8084",
+      "type": "string"
+    },
+    {
+      "key": "ms_compras",
+      "value": "http://localhost:8085",
+      "type": "string"
+    },
+    {
+      "key": "ms_finanzas",
+      "value": "http://localhost:8086",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. MS Auth y Usuarios (8081)",
+      "item": [
+        {
+          "name": "Login Exitoso (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identificador\": \"admin@colegio.cl\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway}}/api/auth/login",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login Fallido (Credenciales Erróneas)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identificador\": \"admin@colegio.cl\",\n  \"password\": \"clave_falsa\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway}}/api/auth/login",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear Usuario Staff (PRIMER_ACCESO)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rut\": \"17.888.999-4\",\n  \"primerNombre\": \"Ignacio\",\n  \"primerApellido\": \"Soto\",\n  \"correo\": \"ignacio.soto@colegio.cl\",\n  \"rol\": \"ENCARGADO\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway}}/api/usuarios",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "usuarios"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar Todos los Usuarios",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gateway}}/api/usuarios",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "usuarios"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. MS Alumnos y Saldos (8082)",
+      "item": [
+        {
+          "name": "Listar Alumnos y Saldos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gateway}}/api/alumnos",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "alumnos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Abonar Saldo Webpay (Simulación)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"apoderadoId\": 4,\n  \"monto\": 10000,\n  \"idempotencyKey\": \"KEY-ABONO-POSTMAN-01\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway}}/api/saldos/1/abonar",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "saldos",
+                "1",
+                "abonar"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Comprometer Saldo por Reserva",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monto\": 2500,\n  \"reservaId\": 101,\n  \"usuarioId\": 4,\n  \"idempotencyKey\": \"KEY-COMP-POSTMAN-01\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway}}/api/saldos/1/comprometer",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "saldos",
+                "1",
+                "comprometer"
+              ]
+            }
+          }
+        },
+        {
+          "name": "EDGE CASE: Rechazo Saldo Insuficiente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monto\": 9999999,\n  \"reservaId\": 999,\n  \"usuarioId\": 4,\n  \"idempotencyKey\": \"KEY-FAIL-POSTMAN\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway}}/api/saldos/1/comprometer",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "saldos",
+                "1",
+                "comprometer"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Finalizar Reserva Atómicamente (Entrega)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monto\": 2500,\n  \"reservaId\": 101,\n  \"ventaId\": 501,\n  \"usuarioId\": 2,\n  \"idempotencyKey\": \"KEY-FIN-POSTMAN-01\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway}}/api/saldos/1/finalizar-reserva",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "saldos",
+                "1",
+                "finalizar-reserva"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar Historial de Movimientos de Saldo",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gateway}}/api/saldos/1/movimientos",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "saldos",
+                "1",
+                "movimientos"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. MS Productos e Inventario (8083)",
+      "item": [
+        {
+          "name": "Listar Catálogo y Existencias",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gateway}}/api/productos",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "productos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear Nuevo Producto en Catálogo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoriaId\": 1,\n  \"sku\": \"CUAD-DIB-PRO-01\",\n  \"codigoBarras\": \"780999990001\",\n  \"nombre\": \"Cuaderno Dibujo Profesional\",\n  \"cursoNivel\": \"Ense\\u00f1anza Media\",\n  \"materia\": \"Artes\",\n  \"precioVenta\": 2200,\n  \"cpp\": 1500,\n  \"stockInicial\": 20,\n  \"stockCritico\": 4\n}"
+            },
+            "url": {
+              "raw": "{{gateway}}/api/productos",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "productos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reservar Stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cantidad\": 2,\n  \"referenciaId\": 101,\n  \"idempotencyKey\": \"KEY-STK-RES-01\",\n  \"usuarioId\": 4\n}"
+            },
+            "url": {
+              "raw": "{{gateway}}/api/inventario/101/reservar",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "inventario",
+                "101",
+                "reservar"
+              ]
+            }
+          }
+        },
+        {
+          "name": "EDGE CASE: Rechazo Quiebre de Stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cantidad\": 9999,\n  \"referenciaId\": 101,\n  \"idempotencyKey\": \"KEY-STK-FAIL\",\n  \"usuarioId\": 4\n}"
+            },
+            "url": {
+              "raw": "{{gateway}}/api/inventario/101/reservar",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "inventario",
+                "101",
+                "reservar"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Entrada por Compra (Recálculo CPP con IVA)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cantidad\": 10,\n  \"costoUnitarioConIva\": 1190,\n  \"recepcionId\": 1,\n  \"idempotencyKey\": \"KEY-BUY-RECALC-01\",\n  \"usuarioId\": 2\n}"
+            },
+            "url": {
+              "raw": "{{gateway}}/api/inventario/101/entrada-compra",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "inventario",
+                "101",
+                "entrada-compra"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Solicitar Ajuste por Merma (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productoId\": 101,\n  \"cantidad\": -1,\n  \"motivo\": \"Da\\u00f1o por derrame de t\\u00e9mpera\",\n  \"solicitanteId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{gateway}}/api/inventario/ajustes/solicitar",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "inventario",
+                "ajustes",
+                "solicitar"
+              ]
+            }
+          }
+        },
+        {
+          "name": "DOBLE FIRMA: Autorizar Ajuste (Autorizador)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"autorizadorId\": 3,\n  \"aprobada\": true,\n  \"comentario\": \"Merma verificada y aprobada\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway}}/api/inventario/ajustes/1/autorizar",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "inventario",
+                "ajustes",
+                "1",
+                "autorizar"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. MS Ventas y Reservas (8084)",
+      "item": [
+        {
+          "name": "1. Crear Reserva Multilínea",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"alumnoId\": 1,\n  \"apoderadoId\": 4,\n  \"items\": [\n    {\n      \"productoId\": 101,\n      \"nombreProducto\": \"Cuaderno universitario\",\n      \"cantidad\": 2,\n      \"precioUnitario\": 1250\n    },\n    {\n      \"productoId\": 105,\n      \"nombreProducto\": \"L\\u00e1piz grafito HB\",\n      \"cantidad\": 1,\n      \"precioUnitario\": 450\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{gateway}}/api/reservas",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "reservas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "2. Iniciar Preparación en Bodega",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gateway}}/api/reservas/1/iniciar-preparacion?encargadoId=2",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "reservas",
+                "1",
+                "iniciar-preparacion"
+              ],
+              "query": [
+                {
+                  "key": "encargadoId",
+                  "value": "2"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "3. Generar Rótulo y Etiqueta Bolsa",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gateway}}/api/reservas/1/etiquetar",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "reservas",
+                "1",
+                "etiquetar"
+              ]
+            }
+          }
+        },
+        {
+          "name": "4. Marcar Lista para Retiro",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gateway}}/api/reservas/1/marcar-lista?encargadoId=2",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "reservas",
+                "1",
+                "marcar-lista"
+              ],
+              "query": [
+                {
+                  "key": "encargadoId",
+                  "value": "2"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "5. Entregar en Mesón (Venta Definitiva)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{gateway}}/api/reservas/1/entregar?encargadoId=2",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "reservas",
+                "1",
+                "entregar"
+              ],
+              "query": [
+                {
+                  "key": "encargadoId",
+                  "value": "2"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Venta Presencial Directa (HU34 Alumno >= 12 años)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"alumnoId\": 2,\n  \"encargadoId\": 2,\n  \"items\": [\n    {\n      \"productoId\": 106,\n      \"nombreProducto\": \"Goma de borrar\",\n      \"cantidad\": 1,\n      \"precioUnitario\": 350\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{gateway}}/api/ventas/directa",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "ventas",
+                "directa"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. MS Compras (8085) - Variante B",
+      "item": [
+        {
+          "name": "Listar Proveedores",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gateway}}/api/proveedores",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "proveedores"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Emitir Orden de Compra en Valores Netos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"proveedorId\": 1,\n  \"emitidaPorId\": 1,\n  \"items\": [\n    {\n      \"productoId\": 101,\n      \"sku\": \"CUAD-UNI-01\",\n      \"cantidadPedida\": 30,\n      \"valorNetoUnitario\": 900\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{gateway}}/api/ordenes-compra",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "ordenes-compra"
+              ]
+            }
+          }
+        },
+        {
+          "name": "EDGE CASE: Rechazo Atómico por Artículo Intruso",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ordenCompraId\": 1,\n  \"encargadaId\": 2,\n  \"facturas\": [\n    {\n      \"numero\": \"FAC-TEST-RECHAZO-01\",\n      \"fechaEmision\": \"2026-10-12\",\n      \"montoNeto\": 30000,\n      \"iva\": 5700,\n      \"total\": 35700,\n      \"items\": [\n        {\n          \"sku\": \"CUAD-UNI-01\",\n          \"descripcionOriginal\": \"Cuaderno universitario\",\n          \"cantidad\": 30,\n          \"valorNetoUnitario\": 900\n        },\n        {\n          \"sku\": \"INTRUSO-99\",\n          \"descripcionOriginal\": \"Art\\u00edculo no ordenado\",\n          \"cantidad\": 1,\n          \"valorNetoUnitario\": 3000\n        }\n      ]\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{gateway}}/api/recepciones",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "recepciones"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Recepción Conforme Aceptada (Variante B)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ordenCompraId\": 1,\n  \"encargadaId\": 2,\n  \"facturas\": [\n    {\n      \"numero\": \"FAC-CONFORME-01\",\n      \"fechaEmision\": \"2026-10-12\",\n      \"montoNeto\": 27000,\n      \"iva\": 5130,\n      \"total\": 32130,\n      \"items\": [\n        {\n          \"sku\": \"CUAD-UNI-01\",\n          \"descripcionOriginal\": \"Cuaderno universitario\",\n          \"cantidad\": 30,\n          \"valorNetoUnitario\": 900\n        }\n      ]\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{gateway}}/api/recepciones",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "recepciones"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Marcar Factura como PAGADA",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{gateway}}/api/recepciones/facturas/1/marcar-pagada",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "recepciones",
+                "facturas",
+                "1",
+                "marcar-pagada"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. MS Finanzas y Configuración (8086)",
+      "item": [
+        {
+          "name": "Consultar Cartola de Movimientos de Caja",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gateway}}/api/finanzas/caja/movimientos",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "finanzas",
+                "caja",
+                "movimientos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Regla HU58: Registrar Resultado de Venta (Sin mover caja)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"VENTA\",\n  \"montoVenta\": 2950,\n  \"costoVenta\": 2100,\n  \"alumnoId\": 1,\n  \"referenciaId\": 501,\n  \"referenciaFolio\": \"VTA-501\",\n  \"idempotencyKey\": \"KEY-RES-POSTMAN-01\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway}}/api/finanzas/resultados/operacion",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "finanzas",
+                "resultados",
+                "operacion"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Regla HU58: Abono Webpay (Ingreso Real en Caja)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monto\": 10000,\n  \"abonoFolio\": \"ABO-POSTMAN-01\",\n  \"usuarioId\": 4,\n  \"idempotencyKey\": \"KEY-CAJA-POSTMAN-01\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway}}/api/finanzas/caja/abono",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "finanzas",
+                "caja",
+                "abono"
+              ]
+            }
+          }
+        },
+        {
+          "name": "1. Solicitar Pago de Factura (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"facturaPorPagarId\": 1,\n  \"solicitanteId\": 1,\n  \"monto\": 11900\n}"
+            },
+            "url": {
+              "raw": "{{gateway}}/api/finanzas/pagos/solicitar",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "finanzas",
+                "pagos",
+                "solicitar"
+              ]
+            }
+          }
+        },
+        {
+          "name": "2. DOBLE FIRMA: Autorizar Pago (Autorizador)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"autorizadorId\": 3,\n  \"aprobada\": true\n}"
+            },
+            "url": {
+              "raw": "{{gateway}}/api/finanzas/pagos/1/autorizar",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "finanzas",
+                "pagos",
+                "1",
+                "autorizar"
+              ]
+            }
+          }
+        },
+        {
+          "name": "3. Registrar Egreso Efectivo en Caja",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"facturaPorPagarId\": 1,\n  \"monto\": 11900,\n  \"comprobanteReferencia\": \"TEF-POSTMAN-8841\",\n  \"registradoPorId\": 1,\n  \"idempotencyKey\": \"KEY-PAGO-EGRESO-01\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway}}/api/finanzas/pagos/egreso",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "finanzas",
+                "pagos",
+                "egreso"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Abrir Período Contable Mensual",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{gateway}}/api/periodos/abrir?anio=2026&mes=10",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "periodos",
+                "abrir"
+              ],
+              "query": [
+                {
+                  "key": "anio",
+                  "value": "2026"
+                },
+                {
+                  "key": "mes",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

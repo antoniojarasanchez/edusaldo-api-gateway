@@ -9,7 +9,8 @@ El **API Gateway** es el punto único de entrada (*Single Point of Entry*) para 
 Para clonar la solución completa con el Gateway, los 6 microservicios y el Frontend SPA en un mismo directorio contenedor:
 
 ```bash
-mkdir EduSaldo && cd EduSaldo
+mkdir EduSaldo
+cd EduSaldo
 
 # 1. API Gateway Central
 git clone https://github.com/antoniojarasanchez/edusaldo-api-gateway.git

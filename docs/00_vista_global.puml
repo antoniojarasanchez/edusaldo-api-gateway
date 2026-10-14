@@ -1,7 +1,7 @@
 @startuml 00_vista_global
-title EduSaldo · Arquitectura General y Bounded Contexts (100% Desacoplados)\nEntrada exclusiva vía API Gateway (Puerto 8099) · Sin comunicación directa entre microservicios
 skinparam classAttributeIconSize 0
 skinparam shadowing false
+skinparam linetype polyline
 skinparam class {
   BackgroundColor #FFFFFF
   BorderColor #1F4E79
@@ -11,137 +11,91 @@ skinparam package {
   BorderColor #1F4E79
   BackgroundColor #EEF4FA
 }
+hide empty members
+title EduSaldo · Modelo de dominio — Vista global (4 microservicios)
 hide members
 hide circle
-top to bottom direction
+left to right direction
 
-package "Punto Único de Entrada" {
-  class "API Gateway\n(Puerto 8099)" as GATEWAY <<Spring Cloud Gateway>> #D9E1F2
-}
-
-package "8081 Auth y Usuarios (db_auth_usuarios)" as AUTH {
-  class Usuario
-  class TokenRecuperacion
-  class TokenRevocado
-  class ConsentimientoPrivacidad
-  Usuario *-- TokenRecuperacion
-  Usuario -- TokenRevocado
-  Usuario *-- ConsentimientoPrivacidad
-}
-
-package "8082 Alumnos y Saldos (db_alumnos_saldos)" as ALU {
+package "8081 Usuarios y Auth" {
+  abstract class Usuario
+  class Administrador
+  class Encargado
+  class Apoderado
   class Alumno
   class ApoderadoAlumno
+  class PoliticaAcceso
+  class ConfiguracionInstitucional
+  class ParametroSistema
+  class RegistroAuditoria
+  Usuario <|-- Administrador
+  Usuario <|-- Encargado
+  Usuario <|-- Apoderado
+  Usuario <|-- Alumno
+  Apoderado "1" -- "0..*" ApoderadoAlumno
+  ApoderadoAlumno "1..*" -- "1" Alumno
+}
+
+package "8082 Saldos y Abonos" {
   class CuentaSaldo
   class MovimientoSaldo
   class Abono
   class AlertaSaldoBajo
   class DevolucionSaldo
-  class ImportacionNomina
-  class DetalleImportacion
-  Alumno "1" *-- "1..*" ApoderadoAlumno
+  CuentaSaldo *-- MovimientoSaldo
   CuentaSaldo *-- AlertaSaldoBajo
   CuentaSaldo -- DevolucionSaldo
-  ImportacionNomina *-- DetalleImportacion
-  DetalleImportacion --> Alumno
-  Alumno *-- CuentaSaldo
-  CuentaSaldo *-- MovimientoSaldo
-  Alumno -- Abono
+  Abono ..> MovimientoSaldo
 }
 
-package "8083 Productos e Inventario (db_productos_inventario)" as PROD {
+package "8083 Productos e Inventario" {
   class Categoria
   class Producto
+  class Proveedor
+  class IngresoStock
+  class DetalleIngresoStock
   class MovimientoInventario
   class SolicitudAjusteStock
   class InventarioFisico
-  class DetalleConteo
-  class ReporteDiferenciaStock
   Categoria -- Producto
+  Proveedor -- IngresoStock
+  IngresoStock *-- DetalleIngresoStock
+  DetalleIngresoStock --> Producto
   Producto *-- MovimientoInventario
   Producto -- SolicitudAjusteStock
-  InventarioFisico *-- DetalleConteo
-  DetalleConteo --> Producto
-  DetalleConteo --> ReporteDiferenciaStock
-  ReporteDiferenciaStock --> Producto
-  ReporteDiferenciaStock --> SolicitudAjusteStock
+  InventarioFisico --> Producto
 }
 
-package "8084 Ventas y Reservas (db_ventas_reservas)" as VEN {
+package "8084 Reservas y Entregas" {
   class Reserva
   class DetalleReserva
-  class Venta
-  class DetalleVenta
+  class Entrega
+  class DetalleEntrega
   class Devolucion
-  class DetalleDevolucion
+  class NotificacionEntrega
   Reserva *-- DetalleReserva
-  Reserva -- Venta
-  Venta *-- DetalleVenta
-  Venta *-- Devolucion
-  Devolucion *-- DetalleDevolucion
-  DetalleDevolucion --> DetalleVenta
+  Reserva -- Entrega
+  Entrega *-- DetalleEntrega
+  Entrega -- Devolucion
+  Entrega *-- NotificacionEntrega
 }
 
-package "8085 Compras (db_compras)" as COM {
-  class Proveedor
-  class OrdenCompra
-  class DetalleOrdenCompra
-  class Recepcion
-  class DetalleRecepcion
-  class Factura
-  class DetalleFactura
-  Proveedor -- OrdenCompra
-  Proveedor -- Factura
-  OrdenCompra *-- DetalleOrdenCompra
-  OrdenCompra -- Recepcion
-  Recepcion *-- DetalleRecepcion
-  DetalleRecepcion --> DetalleOrdenCompra
-  Recepcion "1" *-- "1..*" Factura
-  Factura *-- DetalleFactura
-  DetalleFactura --> DetalleOrdenCompra
-}
-
-package "8086 Finanzas y Configuración (db_finanzas_config)" as FIN {
-  class CuentaLibreria
-  class MovimientoCaja
-  class RegistroResultado
-  class ReporteResultados <<DTO>>
-  class PeriodoContable
-  class FacturaPorPagar
-  class ItemFacturaPorPagar
-  class SolicitudPago
-  class Pago
-  class ConfiguracionInstitucional
-  class ParametroSistema
-  class RegistroAuditoria
-  class ConsultaContacto
-  CuentaLibreria *-- MovimientoCaja
-  PeriodoContable -- MovimientoCaja
-  PeriodoContable -- RegistroResultado
-  ReporteResultados ..> MovimientoCaja
-  ReporteResultados ..> RegistroResultado
-  FacturaPorPagar *-- ItemFacturaPorPagar
-  FacturaPorPagar -- SolicitudPago
-  SolicitudPago -- Pago
-  Pago --> MovimientoCaja
-}
-
-' Enrutamiento exclusivo hacia los puertos de cada microservicio
-GATEWAY --> AUTH : Puerto 8081
-GATEWAY --> ALU : Puerto 8082
-GATEWAY --> PROD : Puerto 8083
-GATEWAY --> VEN : Puerto 8084
-GATEWAY --> COM : Puerto 8085
-GATEWAY --> FIN : Puerto 8086
+' Referencias entre microservicios: solo por ID (sin relación JPA)
+CuentaSaldo ..> Alumno : alumnoId
+Abono ..> Apoderado : apoderadoId
+Reserva ..> Alumno : alumnoId
+Entrega ..> Alumno : alumnoId
+NotificacionEntrega ..> Apoderado : apoderadoId
+DetalleReserva ..> Producto : productoId
+DetalleEntrega ..> Producto : productoId
+IngresoStock ..> Encargado : encargadoId
 
 legend right
-  Topología en Estrella (Hub & Spoke):
-  • Cada microservicio es 100% autónomo con su propia base de datos.
-  • Cero dependencias directas entre microservicios.
-  • Referencias a otras entidades se guardan únicamente
-    como IDs numéricos escalares (Long alumnoId, Long productoId),
-    sin FKs JPA ni llamadas remotas entre sí.
-  • El Gateway (8099) centraliza el acceso desde React y enruta
-    hacia los puertos oficiales (8081 a 8086) definidos en arquitectura.
+  ——  relación JPA dentro del microservicio
+  ◆——  composición
+  △——  herencia
+  - - ->  referencia por ID entre microservicios
+          (REST + DTO, sin FK entre bases de datos)
+  Se eliminaron MS Compras y MS Finanzas.
 endlegend
 @enduml

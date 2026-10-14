@@ -13,6 +13,7 @@ import time
 import sys
 
 GATEWAY = "http://localhost:8099"
+current_test_calls = []
 
 def post(endpoint, data):
     url = f"{GATEWAY}{endpoint}"
@@ -22,55 +23,109 @@ def post(endpoint, data):
         headers={'Content-Type': 'application/json'},
         method='POST'
     )
+    status_code = 0
+    body = None
     try:
         with urllib.request.urlopen(req, timeout=5) as resp:
-            return resp.status, json.loads(resp.read().decode('utf-8'))
+            status_code = resp.status
+            body = json.loads(resp.read().decode('utf-8'))
     except urllib.error.HTTPError as e:
+        status_code = e.code
         try:
             body = json.loads(e.read().decode('utf-8'))
         except Exception:
             body = e.reason
-        return e.code, body
+    except Exception as ex:
+        status_code = 0
+        body = str(ex)
+    current_test_calls.append(('POST', url, data, status_code, body))
+    return status_code, body
 
 def get(endpoint):
     url = f"{GATEWAY}{endpoint}"
     req = urllib.request.Request(url, method='GET')
+    status_code = 0
+    body = None
     try:
         with urllib.request.urlopen(req, timeout=5) as resp:
-            return resp.status, json.loads(resp.read().decode('utf-8'))
+            status_code = resp.status
+            body = json.loads(resp.read().decode('utf-8'))
     except urllib.error.HTTPError as e:
+        status_code = e.code
         try:
             body = json.loads(e.read().decode('utf-8'))
         except Exception:
             body = e.reason
-        return e.code, body
+    except Exception as ex:
+        status_code = 0
+        body = str(ex)
+    current_test_calls.append(('GET', url, None, status_code, body))
+    return status_code, body
 
 def put(endpoint, data=None):
     url = f"{GATEWAY}{endpoint}"
     body_bytes = json.dumps(data).encode('utf-8') if data else b''
     headers = {'Content-Type': 'application/json'} if data else {}
     req = urllib.request.Request(url, data=body_bytes, headers=headers, method='PUT')
+    status_code = 0
+    body = None
     try:
         with urllib.request.urlopen(req, timeout=5) as resp:
-            return resp.status, json.loads(resp.read().decode('utf-8'))
+            status_code = resp.status
+            body = json.loads(resp.read().decode('utf-8'))
     except urllib.error.HTTPError as e:
+        status_code = e.code
         try:
             body = json.loads(e.read().decode('utf-8'))
         except Exception:
             body = e.reason
-        return e.code, body
+    except Exception as ex:
+        status_code = 0
+        body = str(ex)
+    current_test_calls.append(('PUT', url, data, status_code, body))
+    return status_code, body
 
 passed = 0
 failed = 0
 
+def format_multiline(data, indent_prefix="            "):
+    if data is None:
+        return f"{indent_prefix}(vacio)"
+    try:
+        if isinstance(data, (dict, list)):
+            text = json.dumps(data, indent=2, ensure_ascii=False)
+        else:
+            parsed = json.loads(str(data))
+            text = json.dumps(parsed, indent=2, ensure_ascii=False)
+    except Exception:
+        text = str(data)
+
+    lines = text.splitlines()
+    if len(lines) > 25:
+        tail = lines[-1] if lines[-1].strip() in [']', '}'] else ""
+        lines = lines[:23] + [f"... ({len(lines) - 24} líneas adicionales) ..."]
+        if tail:
+            lines.append(tail)
+    return "\n".join(f"{indent_prefix}{l}" for l in lines)
+
 def check(test_num, name, condition, details=""):
-    global passed, failed
+    global passed, failed, current_test_calls
     if condition:
         passed += 1
         print(f"[PASS] {test_num}. {name} {details}")
     else:
         failed += 1
         print(f"[FAIL] {test_num}. {name} {details}")
+
+    for method, url, payload, status, resp in current_test_calls:
+        print(f"       -> [{method}] {url}")
+        if payload is not None:
+            print("          Payload Enviado:")
+            print(format_multiline(payload, "            "))
+        print(f"       <- HTTP {status}")
+        print("          Respuesta del Microservicio:")
+        print(format_multiline(resp, "            "))
+    current_test_calls.clear()
 
 print("=============================================================================")
 print("  EDUSALDO 2.0 - BATERÍA COMPLETA DE PRUEBAS EN VIVO VÍA API GATEWAY (8099)")
@@ -381,4 +436,15 @@ if failed == 0:
     print("[OK] TODOS LOS SERVICIOS Y EL GATEWAY OPERAN AL 100% CON TOLERANCIA CERO A ERRORES.")
 else:
     print("ALERTA: Se detectaron fallos en la batería de pruebas.")
+
+print("\n" + "="*77)
+if sys.stdin.isatty():
+    input("Presione [Enter] para salir...")
+else:
+    try:
+        input("Presione [Enter] para salir...")
+    except (EOFError, OSError):
+        pass
+
+if failed > 0:
     sys.exit(1)

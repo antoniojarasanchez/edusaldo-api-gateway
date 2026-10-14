@@ -25,45 +25,45 @@ package "8081 Usuarios y Auth" {
   class Alumno
   class ApoderadoAlumno
   class PoliticaAcceso
+  class IntentoAcceso
+  class TokenRecuperacion
+  class ConsentimientoPrivacidad
   class ConfiguracionInstitucional
   class ParametroSistema
   class RegistroAuditoria
+  class ConsultaContacto
   Usuario <|-- Administrador
   Usuario <|-- Encargado
   Usuario <|-- Apoderado
   Usuario <|-- Alumno
-  Apoderado "1" -- "0..*" ApoderadoAlumno
-  ApoderadoAlumno "1..*" -- "1" Alumno
+  Apoderado "1..*" -- "0..*" Alumno : asociados >
+  (Apoderado, Alumno) .. ApoderadoAlumno
+  Usuario *-- TokenRecuperacion
+  Usuario *-- ConsentimientoPrivacidad
+  PoliticaAcceso ..> IntentoAcceso : evalúa
+  RegistroAuditoria ..> Usuario : audita
 }
 
 package "8082 Saldos y Abonos" {
   class CuentaSaldo
   class MovimientoSaldo
   class Abono
-  class AlertaSaldoBajo
-  class DevolucionSaldo
   CuentaSaldo *-- MovimientoSaldo
-  CuentaSaldo *-- AlertaSaldoBajo
-  CuentaSaldo -- DevolucionSaldo
-  Abono ..> MovimientoSaldo
+  Abono ..> CuentaSaldo : acredita en
 }
 
 package "8083 Productos e Inventario" {
   class Categoria
   class Producto
-  class Proveedor
   class IngresoStock
   class DetalleIngresoStock
   class MovimientoInventario
   class SolicitudAjusteStock
-  class InventarioFisico
   Categoria -- Producto
-  Proveedor -- IngresoStock
   IngresoStock *-- DetalleIngresoStock
   DetalleIngresoStock --> Producto
   Producto *-- MovimientoInventario
   Producto -- SolicitudAjusteStock
-  InventarioFisico --> Producto
 }
 
 package "8084 Reservas y Entregas" {
@@ -72,30 +72,38 @@ package "8084 Reservas y Entregas" {
   class Entrega
   class DetalleEntrega
   class Devolucion
-  class NotificacionEntrega
+  class DetalleDevolucion
   Reserva *-- DetalleReserva
   Reserva -- Entrega
   Entrega *-- DetalleEntrega
   Entrega -- Devolucion
-  Entrega *-- NotificacionEntrega
+  Devolucion *-- DetalleDevolucion
+  DetalleDevolucion --> DetalleEntrega : revierte
 }
 
 ' Referencias entre microservicios: solo por ID (sin relación JPA)
 CuentaSaldo ..> Alumno : alumnoId
 Abono ..> Apoderado : apoderadoId
+Abono ..> Alumno : alumnoId
 Reserva ..> Alumno : alumnoId
+Reserva ..> Apoderado : creadaPorId (APO o ALU ≥ 12)
 Entrega ..> Alumno : alumnoId
-NotificacionEntrega ..> Apoderado : apoderadoId
 DetalleReserva ..> Producto : productoId
 DetalleEntrega ..> Producto : productoId
 IngresoStock ..> Encargado : encargadoId
 
 legend right
-  ——  relación JPA dentro del microservicio
+  ——  relación dentro del microservicio
   ◆——  composición
   △——  herencia
+  ..  clase de asociación UML (ApoderadoAlumno)
   - - ->  referencia por ID entre microservicios
           (REST + DTO, sin FK entre bases de datos)
-  Se eliminaron MS Compras y MS Finanzas.
+  Otros IDs omitidos por claridad: preparadaPorId / encargadoId
+  (Reserva, Entrega, Devolucion → Encargado), solicitanteId y
+  administradorId (SolicitudAjusteStock → Encargado / Administrador).
+  Ya no forman parte de la arquitectura: MS Compras, MS Finanzas,
+  Proveedor, AlertaSaldoBajo, DevolucionSaldo, InventarioFisico,
+  NotificacionEntrega, ImportacionNomina.
 endlegend
 @enduml

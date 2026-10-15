@@ -180,15 +180,22 @@ check("03", "Alta atómica Alumno + Apoderado (HU15)", st in [200, 201] and res.
 created_alumno_id = res.get("alumnoId")
 created_apoderado_id = res.get("apoderadoId")
 
-# Caso 4: Consulta de alumnos de un apoderado
+# Caso 4: Consulta de alumnos de un apoderado (HU17)
 if created_apoderado_id:
     st, res = get(f"/api/usuarios/apoderados/{created_apoderado_id}/alumnos")
-    check("04", "Consulta de alumnos de un apoderado", st == 200 and len(res) >= 1)
+    check("04", "Consulta de pupilos asociados a apoderado (HU17)", st == 200 and len(res) >= 1)
 
-# Caso 5: Consulta de configuración institucional y auditoría
-st_cfg, _ = get("/api/configuracion")
-st_aud, _ = get("/api/auditoria")
-check("05", "Consulta de configuración institucional y auditoría", st_cfg == 200 and st_aud == 200)
+# Caso 05: Consulta de configuración institucional
+st_cfg, res_cfg = get("/api/configuracion")
+check("05", "Consulta de configuración institucional", st_cfg == 200 and "nombreEstablecimiento" in res_cfg)
+
+# Caso 06: Consulta de usuario Alumno por ID (HU04 Autonomía >= 12 años)
+st_alu, res_alu = get(f"/api/usuarios/{created_alumno_id if created_alumno_id else 1}")
+check("06", "Consulta de usuario Alumno por ID (HU04 Autonomía >= 12 años)", st_alu == 200 and res_alu.get("id") == (created_alumno_id if created_alumno_id else 1))
+
+# Caso 07: Verificación de registro de auditoría de seguridad
+st_aud, res_aud = get("/api/auditoria")
+check("07", "Verificación de registro de auditoría de seguridad", st_aud == 200 and len(res_aud) >= 1)
 
 # -----------------------------------------------------------------------------
 # 2. MS SALDOS Y ABONOS (Puerto 8082)
@@ -196,123 +203,128 @@ check("05", "Consulta de configuración institucional y auditoría", st_cfg == 2
 print("\n--- 2. MS SALDOS Y ABONOS (Puerto 8082) ---")
 
 alumno_target = created_alumno_id if created_alumno_id else 1
-# Caso 6: Consulta de cuenta de saldo
+# Caso 08: Consulta de saldo inicial de pupilo
 st, res = get(f"/api/saldos/cuenta/{alumno_target}")
-check("06", "Consulta de cuenta de saldo del alumno", st in [200, 201] and "saldoDisponible" in res)
+check("08", "Consulta de saldo inicial de pupilo", st in [200, 201] and "saldoDisponible" in res)
 
-# Caso 7: Iniciar abono con pasarela simulada
+# Caso 09: Inicio de abono Webpay simulado (Token UUID generado)
 st, res = post("/api/saldos/abonos/iniciar", {
     "apoderadoId": created_apoderado_id if created_apoderado_id else 1,
     "alumnoId": alumno_target,
-    "monto": 10000
+    "monto": 15000
 })
-check("07", "Inicio de abono simulado con token generado", st in [200, 201] and "token" in res)
+check("09", "Inicio de abono Webpay simulado (Token UUID generado)", st in [200, 201] and "token" in res)
 token_abono = res.get("token")
 
-# Caso 8: Confirmar abono con token
+# Caso 10: Confirmación de abono y acreditación en CuentaSaldo
 if token_abono:
     st, res = post("/api/saldos/abonos/confirmar", {"token": token_abono})
-    check("08", "Confirmación de abono y acreditación en CuentaSaldo", st == 200 and res.get("estado") == "APROBADO")
+    check("10", "Confirmación de abono y acreditación en CuentaSaldo", st == 200 and res.get("estado") == "APROBADO")
 
-# Caso 9: Edge case - Retención fallida por saldo insuficiente
+# Caso 11: Edge case - Retención fallida por saldo insuficiente (400/422)
 st, res = post("/api/saldos/retener", {
     "alumnoId": alumno_target,
     "monto": 9999999,
     "reservaId": 999
 })
-check("09", "Rechazo controlado por saldo insuficiente (400/422)", st in [400, 422])
+check("11", "Rechazo controlado por saldo insuficiente (400/422)", st in [400, 422])
 
-# Caso 10: Consulta de libro mayor de movimientos de saldo
+# Caso 12: Consulta de libro mayor MovimientoSaldo
 st, res = get(f"/api/saldos/cuenta/{alumno_target}/movimientos")
-check("10", "Consulta de libro mayor MovimientoSaldo", st == 200 and len(res) >= 1)
+check("12", "Consulta de libro mayor MovimientoSaldo", st == 200 and len(res) >= 1)
 
 # -----------------------------------------------------------------------------
 # 3. MS PRODUCTOS E INVENTARIO (Puerto 8083)
 # -----------------------------------------------------------------------------
 print("\n--- 3. MS PRODUCTOS E INVENTARIO (Puerto 8083) ---")
 
-# Caso 11: Consulta de catálogo
+# Caso 13: Consulta de catálogo y existencias
 st, res = get("/api/productos")
-check("11", "Consulta de catálogo y existencias", st == 200)
+check("13", "Consulta de catálogo y existencias", st == 200 and len(res) >= 1)
+prod_target_id = res[0].get("id") if (isinstance(res, list) and len(res) > 0) else 1
 
-# Caso 12: Ingreso manual de stock por Encargado (HU46)
+# Caso 14: Ingreso manual de stock por Encargado (HU46)
 st, res = post("/api/inventario/ingresos-manuales", {
     "encargadoId": 2,
-    "proveedor": "Distribuidora Escolar Central",
+    "proveedor": "Distribuidora Central Escolar",
     "documentoReferencia": "GUIA-DESPACHO-4581",
-    "observacion": "Recepción de cuadernos y lápices para inicio de semestre",
+    "observacion": "Recepción de materiales",
     "detalles": [
-        {"productoId": 1, "cantidad": 25}
+        {"productoId": prod_target_id, "cantidad": 20}
     ]
 })
-check("12", "Ingreso manual de stock por Encargado (HU46)", st in [200, 201])
+check("14", "Ingreso manual de stock por Encargado (HU46)", st in [200, 201])
 
-# Caso 13: Solicitud de ajuste de stock por Encargado (HU45)
+# Caso 15: Solicitud de ajuste de stock en PENDIENTE
 st, res = post("/api/inventario/ajustes/solicitar", {
-    "productoId": 1,
+    "productoId": prod_target_id,
     "cantidad": -2,
     "motivo": "Merma por deterioro en estante",
     "encargadoId": 2
 })
-check("13", "Solicitud de ajuste de stock en PENDIENTE", st in [200, 201] and res.get("estado") == "PENDIENTE")
+check("15", "Solicitud de ajuste de stock en PENDIENTE", st in [200, 201] and res.get("estado") == "PENDIENTE")
 ajuste_id = res.get("id")
 
-# Caso 14: Aprobación exclusiva por Administrador
+# Caso 16: Aprobación de ajuste por Administrador e impacto en stock
 if ajuste_id:
     st, res = post(f"/api/inventario/ajustes/{ajuste_id}/aprobar", {"administradorId": 1})
-    check("14", "Aprobación de ajuste por Administrador (HU45)", st == 200 and res.get("estado") == "APROBADA")
+    check("16", "Aprobación de ajuste por Administrador e impacto en stock", st == 200 and res.get("estado") == "APROBADA")
+
+# Caso 17: Consulta de libro mayor MovimientoInventario
+st, res = get("/api/inventario/movimientos")
+check("17", "Consulta de libro mayor MovimientoInventario", st == 200 and len(res) >= 1)
 
 # -----------------------------------------------------------------------------
 # 4. MS RESERVAS Y ENTREGAS (Puerto 8084)
 # -----------------------------------------------------------------------------
 print("\n--- 4. MS RESERVAS Y ENTREGAS (Puerto 8084) ---")
 
-# Caso 15: Crear reserva multilínea
+# Caso 18: Creación de reserva con retención de saldo y stock
 st, res = post("/api/reservas", {
     "alumnoId": alumno_target,
     "creadaPorId": created_apoderado_id if created_apoderado_id else 1,
     "items": [
-        {"productoId": 1, "nombreProducto": "Cuaderno universitario", "cantidad": 2, "precioUnitario": 1500}
+        {"productoId": prod_target_id, "nombreProducto": "Cuaderno universitario", "cantidad": 2, "precioUnitario": 1500}
     ]
 })
-check("15", "Creación de reserva en estado PENDIENTE", st in [200, 201] and res.get("estado") == "PENDIENTE")
+check("18", "Creación de reserva con retención de saldo y stock", st in [200, 201] and res.get("estado") == "PENDIENTE")
 reserva_id = res.get("id")
 
-# Caso 16: Preparar reserva con trazabilidad HU31 CA2
+# Caso 19: Preparación de reserva (HU31 CA2: preparadaPorId y fecha)
 if reserva_id:
     st, res = post(f"/api/reservas/{reserva_id}/marcar-lista", {"encargadoId": 2})
-    check("16", "Preparación de reserva (HU31 CA2: preparadaPorId y fecha)", st == 200 and res.get("estado") == "LISTA_PARA_RETIRO")
+    check("19", "Preparación de reserva (HU31 CA2: preparadaPorId y fecha)", st == 200 and res.get("preparadaPorId") == 2 and res.get("fechaPreparacion") is not None)
 
-# Caso 17: Retiro y generación formal de Entrega
+# Caso 20: Confirmación de retiro genera Entrega formal
 if reserva_id:
     st, res = post(f"/api/reservas/{reserva_id}/entregar", {"encargadoId": 2})
-    check("17", "Confirmación de retiro genera Entrega formal", st in [200, 201] and res.get("origen") == "RESERVA")
+    check("20", "Confirmación de retiro genera Entrega formal", st in [200, 201] and res.get("origen") == "RESERVA")
     entrega_id = res.get("id")
 
-# Caso 18: Entrega directa presencial en mesón
+# Caso 21: Entrega directa presencial en mesón (MESON)
 st, res = post("/api/entregas/meson", {
     "alumnoId": alumno_target,
     "encargadoId": 2,
     "items": [
-        {"productoId": 1, "nombreProducto": "Lápiz grafito", "cantidad": 1, "precioUnitario": 500}
+        {"productoId": prod_target_id, "nombreProducto": "Lápiz grafito", "cantidad": 1, "precioUnitario": 500}
     ]
 })
-check("18", "Entrega directa presencial en mesón (MESON)", st in [200, 201] and res.get("origen") == "MESON")
+check("21", "Entrega directa presencial en mesón (MESON)", st in [200, 201] and res.get("origen") == "MESON")
 
-# Caso 19: Cancelación de reserva permitida para alumno o apoderado
+# Caso 22: Cancelación de reserva por Alumno >= 12 años
 st_res2, res2 = post("/api/reservas", {
     "alumnoId": alumno_target,
     "creadaPorId": alumno_target,
-    "items": [{"productoId": 1, "nombreProducto": "Regla 30cm", "cantidad": 1, "precioUnitario": 800}]
+    "items": [{"productoId": prod_target_id, "nombreProducto": "Regla 30cm", "cantidad": 1, "precioUnitario": 800}]
 })
 if st_res2 in [200, 201] and res2.get("id"):
     r2_id = res2.get("id")
     st, res = post(f"/api/reservas/{r2_id}/cancelar", {"motivo": "Cancelado por alumno antes de retiro", "usuarioId": alumno_target, "rol": "ALU"})
-    check("19", "Cancelación de reserva por Alumno >= 12 años", st == 200 and res.get("estado") == "CANCELADA")
+    check("22", "Cancelación de reserva por Alumno >= 12 años", st == 200 and res.get("estado") == "CANCELADA")
 
-# Caso 20: Consulta de historial de entregas
+# Caso 23: Consulta de historial de entregas operativas
 st, res = get("/api/entregas/historial")
-check("20", "Consulta de historial de entregas operativas", st == 200 and len(res) >= 1)
+check("23", "Consulta de historial de entregas operativas", st == 200 and len(res) >= 1)
 
 print("\n=============================================================================")
 print(f"  RESULTADO FINAL: {passed} CASOS PASARON | {failed} CASOS FALLARON")

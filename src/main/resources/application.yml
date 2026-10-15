@@ -22,38 +22,26 @@ spring:
             allowedHeaders: "*"
             allowCredentials: true
       routes:
-        # MS 01: Auth y Usuarios (8081)
+        # MS 01: Usuarios y Auth (8081)
         - id: ms-auth-usuarios
           uri: http://localhost:8081
           predicates:
-            - Path=/api/auth/**, /api/usuarios/**
+            - Path=/api/auth/**, /api/usuarios/**, /api/configuracion/**, /api/auditoria/**, /api/contacto/**
 
-        # MS 02: Alumnos y Saldos (8082)
+        # MS 02: Saldos y Abonos (8082)
         - id: ms-alumnos-saldos
           uri: http://localhost:8082
           predicates:
-            - Path=/api/alumnos/**, /api/saldos/**
+            - Path=/api/saldos/**
 
         # MS 03: Productos e Inventario (8083)
         - id: ms-productos-inventario
           uri: http://localhost:8083
           predicates:
-            - Path=/api/productos/**, /api/inventario/**
+            - Path=/api/productos/**, /api/categorias/**, /api/inventario/**
 
-        # MS 04: Ventas y Reservas (8084)
+        # MS 04: Reservas y Entregas (8084)
         - id: ms-ventas-reservas
           uri: http://localhost:8084
           predicates:
-            - Path=/api/ventas/**, /api/reservas/**
-
-        # MS 05: Compras (8085)
-        - id: ms-compras
-          uri: http://localhost:8085
-          predicates:
-            - Path=/api/proveedores/**, /api/ordenes-compra/**, /api/recepciones/**
-
-        # MS 06: Finanzas y Configuración (8086)
-        - id: ms-finanzas-configuracion
-          uri: http://localhost:8086
-          predicates:
-            - Path=/api/finanzas/**, /api/periodos/**, /api/config/**
+            - Path=/api/reservas/**, /api/entregas/**, /api/devoluciones/**

@@ -1,8 +1,8 @@
 # =============================================================================
-# Propósito: Levanta concurrentemente los 6 microservicios Spring Boot y el
+# Propósito: Levanta concurrentemente los 4 microservicios Spring Boot y el
 #            API Gateway en segundo plano con detección dinámica de carpetas hermanas.
-# Puertos: 8099 (Gateway), 8081 (Auth), 8082 (Alumnos), 8083 (Productos),
-#          8084 (Ventas), 8085 (Compras), 8086 (Finanzas).
+# Puertos: 8099 (Gateway), 8081 (Auth/Usuarios), 8082 (Saldos/Abonos),
+#          8083 (Productos/Inventario), 8084 (Reservas/Entregas).
 # Ejecución: python edusaldo-api-gateway/scripts/arrancar_servicios.py
 # =============================================================================
 
@@ -19,7 +19,6 @@ CREATE_NEW_PROCESS_GROUP = 0x00000200
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Búsqueda dinámica de la carpeta contenedora donde residen las carpetas edusaldo-*
 def find_root_dir():
     candidates = [
         os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..')),
@@ -38,8 +37,6 @@ services = [
     ('edusaldo-ms-alumnos-saldos', 8082),
     ('edusaldo-ms-productos-inventario', 8083),
     ('edusaldo-ms-ventas-reservas', 8084),
-    ('edusaldo-ms-compras', 8085),
-    ('edusaldo-ms-finanzas-configuracion', 8086),
     ('edusaldo-api-gateway', 8099),
 ]
 
@@ -48,7 +45,7 @@ os.makedirs(logs_dir, exist_ok=True)
 pids = {}
 
 print("=============================================================================")
-print("  EDUSALDO 2.0 - INICIANDO LOS 7 SERVICIOS SPRING BOOT EN SEGUNDO PLANO")
+print("  EDUSALDO 2.0 - INICIANDO 4 MICROSERVICIOS Y GATEWAY EN SEGUNDO PLANO")
 print("=============================================================================")
 print(f"Directorio raíz detectado: {ROOT_DIR}\n")
 
@@ -63,7 +60,7 @@ for name, port in services:
                 break
 
     if not jar_file or not os.path.exists(jar_file):
-        print(f"[ERROR] No se encontró el archivo JAR en {target_dir}. Ejecuta 'mvn package' primero.")
+        print(f"[ERROR] No se encontró el archivo JAR en {target_dir}. Ejecuta 'mvn package -DskipTests' primero.")
         continue
 
     log_path = os.path.join(logs_dir, f'{name}.log')
@@ -106,4 +103,12 @@ while ports_to_check and (time.time() - t0) < timeout:
 if ports_to_check:
     print("\n[ALERTA] Algunos servicios aún no responden:", ports_to_check)
 else:
-    print("\n[OK] LOS 7 SERVICIOS ESTÁN ONLINE Y LISTOS PARA OPERAR.")
+    print("\n[OK] LOS 4 MICROSERVICIOS Y EL GATEWAY ESTÁN ONLINE Y LISTOS.")
+
+if "--daemon" in sys.argv or "--wait" in sys.argv:
+    print("\n[SUPERVISOR] Modo daemon activo. Manteniendo procesos vivos en segundo plano...")
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("\n[SUPERVISOR] Deteniendo procesos...")

@@ -86,11 +86,18 @@ CuentaSaldo ..> Alumno : alumnoId
 Abono ..> Apoderado : apoderadoId
 Abono ..> Alumno : alumnoId
 Reserva ..> Alumno : alumnoId
-Reserva ..> Apoderado : creadaPorId (APO o ALU ≥ 12)
+Reserva ..> Apoderado : notifica a (vía alumnoId)
 Entrega ..> Alumno : alumnoId
+Entrega ..> Apoderado : notifica a (vía alumnoId)
 DetalleReserva ..> Producto : productoId
 DetalleEntrega ..> Producto : productoId
 IngresoStock ..> Encargado : encargadoId
+Reserva ..> Encargado : preparadaPorId
+Entrega ..> Encargado : encargadoId
+Devolucion ..> Encargado : encargadoId
+SolicitudAjusteStock ..> Encargado : encargadoId
+SolicitudAjusteStock ..> Administrador : administradorId
+MovimientoInventario ..> Usuario : usuarioId
 
 legend right
   ——  relación dentro del microservicio
@@ -99,9 +106,8 @@ legend right
   ..  clase de asociación UML (ApoderadoAlumno)
   - - ->  referencia por ID entre microservicios
           (REST + DTO, sin FK entre bases de datos)
-  Otros IDs omitidos por claridad: preparadaPorId / encargadoId
-  (Reserva, Entrega, Devolucion → Encargado), solicitanteId y
-  administradorId (SolicitudAjusteStock → Encargado / Administrador).
+  referenciaId (MovimientoSaldo / MovimientoInventario) es un id
+  polimórfico de la operación origen; no se dibuja como flecha.
   Ya no forman parte de la arquitectura: MS Compras, MS Finanzas,
   Proveedor, AlertaSaldoBajo, DevolucionSaldo, InventarioFisico,
   NotificacionEntrega, ImportacionNomina.

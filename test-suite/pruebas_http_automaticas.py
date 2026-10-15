@@ -320,7 +320,13 @@ print("=========================================================================
 
 if failed == 0:
     print("[OK] LOS 4 MICROSERVICIOS Y EL GATEWAY OPERAN AL 100% SIN ERRORES.")
-    sys.exit(0)
 else:
     print("ALERTA: Se detectaron fallos en la batería de pruebas.")
-    sys.exit(1)
+
+print("\nPresiona Enter para cerrar esta ventana...")
+try:
+    input()
+except Exception:
+    pass
+
+sys.exit(0 if failed == 0 else 1)
